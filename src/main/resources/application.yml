@@ -1,0 +1,20 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: choutuan_take_out
+  datasource:
+    druid:
+      url: jdbc:mysql://localhost:3306/choutuan?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf8&&useSSL=false&useServerPrepStmts=true&cachePrepStmts=true
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      username: root
+      password: zyhsdhrdhr123
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+choutuan:
+  pic-path: D:\choutuan\pic\
