@@ -12,10 +12,13 @@ import com.zyh.choutuan_take_out.utils.SMSUtils;
 import com.zyh.choutuan_take_out.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @Slf4j
@@ -24,6 +27,11 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Resource
+    private RedisTemplate redisTemplate;
+
+
 
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user, HttpSession session){
@@ -41,7 +49,8 @@ public class UserController {
         String code = ValidateCodeUtils.generateValidateCode(4).toString();
 //        SMSUtils.sendMessage( "张忆恒的博客","SMS_461860811",phone, code);
         log.info("{}",code);
-        session.setAttribute(phone, code);
+//        session.setAttribute(phone, code);
+        redisTemplate.opsForValue().set(phone, code, 5, TimeUnit.MINUTES);
         return R.success("手机验证码发送成功");
     }
 
@@ -51,8 +60,9 @@ public class UserController {
         String code = map.get("code");
         log.info("{}", map);
 
-        Object codeInSession = session.getAttribute(phone);
-        if(codeInSession == null || !codeInSession.equals(code)){
+//        Object codeInSession = session.getAttribute(phone);
+        Object codeInRedis = redisTemplate.opsForValue().get(phone);
+        if(codeInRedis == null || !codeInRedis.equals(code)){
             return R.error("登录失败");
         }
 
@@ -67,6 +77,7 @@ public class UserController {
             userService.save(user);
         }
         session.setAttribute("userId", user.getId());
+        redisTemplate.delete(phone);
         return R.success(user);
     }
 

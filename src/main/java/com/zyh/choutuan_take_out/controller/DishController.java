@@ -11,10 +11,13 @@ import com.zyh.choutuan_take_out.service.DishFlavorService;
 import com.zyh.choutuan_take_out.service.DishService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,9 +33,14 @@ public class DishController {
     @Autowired
     private CategoryService categoryService;
 
+    @Resource
+    private RedisTemplate redisTemplate;
+
     @PostMapping
     public R<String> save(@RequestBody DishDto dishDto){
         dishService.saveWithFlavor(dishDto);
+        String key = "dish_" + dishDto.getCategoryId();
+        redisTemplate.delete(key);
         return R.success("新增菜品成功");
     }
 
@@ -68,6 +76,8 @@ public class DishController {
     @PutMapping
     public R<String> update(@RequestBody DishDto dishDto){
         dishService.updateWithFlavor(dishDto);
+        String key = "dish_" + dishDto.getCategoryId();
+        redisTemplate.delete(key);
         return R.success("修改成功");
     }
 
@@ -84,6 +94,18 @@ public class DishController {
 
     @GetMapping("/list")
     public R<List<DishDto>> getDishList(Long categoryId){
+        /**
+         * 从redis中获取缓存数据
+         * 存在则直接返回
+         * 不存在再查询数据库
+         */
+        String redisKey = "dish_" + categoryId.toString();
+        List<DishDto> redisDish = (List<DishDto>)redisTemplate.opsForValue().get(redisKey);
+        if(redisDish != null){
+            return R.success(redisDish);
+        }
+
+
         LambdaQueryWrapper<Dish> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Dish::getCategoryId, categoryId);
         //起售状态
@@ -93,6 +115,7 @@ public class DishController {
         List<DishDto> collect = list.stream().map((item) ->
             dishService.getByIdWithFlavor(item.getId())
         ).collect(Collectors.toList());
+        redisTemplate.opsForValue().set(redisKey, collect, 60, TimeUnit.MINUTES);
         return R.success(collect);
     }
 
