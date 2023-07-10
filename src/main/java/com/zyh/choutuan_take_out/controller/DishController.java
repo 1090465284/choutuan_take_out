@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -122,6 +123,8 @@ public class DishController {
     @DeleteMapping
     public R<String> delete(Long... ids){
         dishService.removeWithFlavor(ids);
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
         return R.success("删除成功");
     }
 
@@ -134,6 +137,8 @@ public class DishController {
             return dish;
         }).collect(Collectors.toList());
         dishService.updateBatchById(collect);
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
         return R.success("修改成功");
     }
 }

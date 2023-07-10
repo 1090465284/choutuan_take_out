@@ -3,11 +3,15 @@ package com.zyh.choutuan_take_out.common;
 import com.zyh.choutuan_take_out.entity.Employee;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 @Data
-public class R<T> {
+public class R<T> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private Integer code;
 
     private String msg;

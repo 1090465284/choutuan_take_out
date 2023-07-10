@@ -9,6 +9,9 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       username: root
       password: zyhsdhrdhr123
+  cache:
+    redis:
+      time-to-live: 1800000
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
