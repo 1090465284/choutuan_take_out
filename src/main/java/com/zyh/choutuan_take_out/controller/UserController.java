@@ -8,6 +8,7 @@ import com.zyh.choutuan_take_out.common.R;
 import com.zyh.choutuan_take_out.entity.AddressBook;
 import com.zyh.choutuan_take_out.entity.User;
 import com.zyh.choutuan_take_out.service.UserService;
+import com.zyh.choutuan_take_out.service.impl.MailService;
 import com.zyh.choutuan_take_out.utils.SMSUtils;
 import com.zyh.choutuan_take_out.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,8 @@ public class UserController {
     @Resource
     private RedisTemplate redisTemplate;
 
-
+    @Autowired
+    private MailService mailService;
 
     @PostMapping("/sendMsg")
     public R<String> sendMsg(@RequestBody User user, HttpSession session){
@@ -44,14 +46,24 @@ public class UserController {
         String phone = user.getPhone();
         log.info("{}", phone);
         if(StringUtils.isNullOrEmpty(phone)){
-            return R.error("手机号为空");
+            return R.error("手机号或邮箱为空");
         }
+        String rulesPhone = "^1([38][0-9]|4[5-9]|5[0-3,5-9]|66|7[0-8]|9[89])[0-9]{8}$";
+        String rulesEmail = "^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*\\.[a-zA-Z0-9]{2,6}$";
         String code = ValidateCodeUtils.generateValidateCode(4).toString();
-//        SMSUtils.sendMessage( "张忆恒的博客","SMS_461860811",phone, code);
-        log.info("{}",code);
+        if (phone.matches(rulesPhone)) {
+            SMSUtils.sendMessage( "张忆恒的博客","SMS_461860811",phone, code);
+            return R.error("发短信花钱,请使用邮箱");
+        } else if (phone.matches(rulesEmail)) {
+            mailService.sendMimeMail(phone, code);
+        }
+
+
+
+        log.info("{}:{}",phone,code);
 //        session.setAttribute(phone, code);
         redisTemplate.opsForValue().set(phone, code, 5, TimeUnit.MINUTES);
-        return R.success("手机验证码发送成功");
+        return R.success("验证码发送成功");
     }
 
     @PostMapping("/login")
