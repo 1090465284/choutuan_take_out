@@ -25,7 +25,10 @@
                 <el-input placeholder="请输入邮箱" v-model="form.phone"  maxlength='20'/></el-input>
                 <div class="divSplit"></div>
                 <el-input placeholder=" 请输入验证码" v-model="form.code"  maxlength='20'/></el-input>
-                <span @click='getCode'>发送验证码</span>
+                <div @click='getCode' :class="{ wait: isWait }">
+                    <span v-show="isWait">获取验证码</span>
+                    <span v-show="!isWait">{{count}}s</span>
+                </div>
             </div>
             <div class="divMsg" v-if="msgFlag">手机号或邮箱输入不正确，请重新输入</div>
             <el-button type="primary" :class="{btnSubmit:1===1,btnNoPhone:!form.phone,btnPhone:form.phone}" @click="btnLogin">登录</el-button>
@@ -42,6 +45,7 @@
         <script src="./../api/login.js"></script>
     </body>
     <script>
+        const TIME_COUNT = 60;
         new Vue({
             el:"#login",
             data(){
@@ -51,23 +55,40 @@
                         code:''
                     },
                     msgFlag:false,
-                    loading:false
+                    loading:false,
+                    timer:null,
+                    isWait:true,
+                    count:0,
                 }
             },
             computed:{},
-            created(){},
+            created(){
+            },
             mounted(){},
             methods:{
                 getCode(){
+                    if (!this.timer){
                     this.form.code = ''
                     const regex = /^(13[0-9]{9})|(15[0-9]{9})|(17[0-9]{9})|(18[0-9]{9})|(19[0-9]{9})$/;
                     const regex2 = /^\w+@[a-z0-9]+\.[a-z]{2,4}$/;
                     if (regex.test(this.form.phone) || regex2.test(this.form.phone)) {
+                        this.count = TIME_COUNT;
                         this.msgFlag = false
+                        this.isWait = false
+                        this.timer = setInterval(() => {
+                            if (this.count > 0 && this.count <= TIME_COUNT) {
+                                this.count--;
+                            } else {
+                                this.isWait = true;
+                                clearInterval(this.timer);
+                                this.timer = null;
+                            }
+                        }, 1000);
                         //this.form.code = (Math.random()*1000000).toFixed(0)
                         sendMsgApi({phone:this.form.phone})
                     }else{
                         this.msgFlag = true
+                    }
                     }
                 },
                 async btnLogin(){
