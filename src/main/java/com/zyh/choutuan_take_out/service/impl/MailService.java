@@ -1,0 +1,43 @@
+package com.zyh.choutuan_take_out.service.impl;
+
+import com.zyh.choutuan_take_out.mapper.UserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpSession;
+import java.util.Random;
+
+@Service
+public class MailService {
+    @Resource
+    private JavaMailSender mailSender;//一定要用@Autowired
+
+    @Autowired
+    private UserMapper userMapper;//注入UserMapper，交给bena
+
+    //application.properties中已配置的值
+    @Value("${spring.mail.username}")
+    private String from;
+
+
+    public boolean sendMimeMail(String email, String code) {
+
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+
+        mailMessage.setSubject("验证码邮件");//主题
+
+        mailMessage.setText("您收到的验证码是：" + code);//内容
+
+        mailMessage.setTo(email);//发给谁
+
+        mailMessage.setFrom(from);//你自己的邮箱
+
+        mailSender.send(mailMessage);//发送
+        return true;
+    }
+}
+
